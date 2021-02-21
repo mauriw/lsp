@@ -17,7 +17,7 @@
 		"vscode": "^1.43.0"
 	},
 	"activationEvents": [
-		"onLanguage:plaintext"
+		"onLanguage:python"
 	],
 	"main": "./client/out/extension",
 	"contributes": {
