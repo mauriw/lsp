@@ -17,9 +17,12 @@ import {
 	InitializeResult
 } from 'vscode-languageserver/node';
 
+import { frequencyWords } from './data';
+
 import {
 	TextDocument
 } from 'vscode-languageserver-textdocument';
+import { strict } from 'assert';
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -192,29 +195,13 @@ connection.onCompletion(
 		// The pass parameter contains the position of the text document in
 		// which code complete got requested. For the example we ignore this
 		// info and always provide the same completion items.
-		return [
-			{
-				label: 'range',
-				kind: CompletionItemKind.Text,
-				data: 1
-			},
-			{
-				label: 'rambo',
-				kind: CompletionItemKind.Text,
-				data: 2
-			},
-			{
-				label: 'print',
-				kind: CompletionItemKind.Text,
-				data: 1
-			},
-			{ 
-				label: 'for',
-				kind: CompletionItemKind.Text,
-				data: 3
-
-			}
-		];
+		let result = [];
+		let aStr = 'a';
+		for(let i = 0; i < frequencyWords.length; i++) {
+			aStr = aStr + 'a';
+			result.push({label: frequencyWords[i], sortText : aStr });
+		}
+		return result;
 	}
 );
 
