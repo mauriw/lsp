@@ -17,6 +17,8 @@ import {
 	InitializeResult
 } from 'vscode-languageserver/node';
 
+import axios from 'axios';
+
 import { frequencyWords } from './data';
 
 import {
@@ -181,7 +183,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	}
 
 	// Send the computed diagnostics to VSCode.
-	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });	
 }
 
 connection.onDidChangeWatchedFiles(_change => {
@@ -191,17 +193,59 @@ connection.onDidChangeWatchedFiles(_change => {
 
 // This handler provides the initial list of the completion items.
 connection.onCompletion(
-	(_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
+	(_textDocumentPosition: TextDocumentPositionParams): any => {
 		// The pass parameter contains the position of the text document in
 		// which code complete got requested. For the example we ignore this
 		// info and always provide the same completion items.
-		let result = [];
-		let aStr = 'a';
-		for(let i = 0; i < frequencyWords.length; i++) {
-			aStr = aStr + 'a';
-			result.push({label: frequencyWords[i], sortText : aStr });
+		// let result = [];
+		// let aStr = 'a';
+		// for(let i = 0; i < frequencyWords.length; i++) {
+		// 	aStr = aStr + 'a';
+		// 	result.push({label: frequencyWords[i], sortText : aStr });
+		// }
+		let document = documents.get(_textDocumentPosition.textDocument.uri);
+		let text = "";
+		if(document) {
+			text = document.getText();
 		}
-		return result;
+		let pos = _textDocumentPosition.position;
+		let lines = text.split(',');   
+		let input_arr = lines[pos.line].split(' ');
+		let input = "";
+		for(let i = 0; i < input_arr.length - 1; i++) {
+			input += input_arr[i];
+		}
+		if(input.length === 0) input = "hi";
+
+        return axios({
+            method: 'post',
+            url: 'https://api-inference.huggingface.co/models/mrm8488/CodeGPT-small-finetuned-python-token-completion',
+            headers: { "Authorization": "Bearer api_org_XzuCFZ" }, 
+            data: {"inputs": input}, 
+          }).then((response) => {
+            let generated_text = response.data[0]['generated_text'];
+			console.log(generated_text, '-', input);
+            let predictions = generated_text.split('.');
+            let processed_predictions = Array();
+            let aStr = 'a';
+            for(let i = 0; i < predictions.length; i++) {
+                let startIndex = predictions[i].indexOf(input);
+                if(startIndex != -1) {
+                    let rest_of_string = predictions[i].substring(startIndex + input?.length).trim();
+                    let rest_of_string_arr = rest_of_string.split(' ');
+                    if(rest_of_string_arr.length > 0) {
+                        aStr += 'a';
+                        processed_predictions.push({label: rest_of_string_arr[0], sortText: aStr});
+                    }
+                }
+            } 
+            return processed_predictions;
+		})
+		.catch((error) => {
+			console.log(error);
+		});
+
+		// if(_textDocumentPosition.position.line === 0) result.push({label: 'hi'});
 	}
 );
 
