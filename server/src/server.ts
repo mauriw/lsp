@@ -213,21 +213,24 @@ connection.onCompletion(
 		let input_arr = lines[pos.line].split(' ');
 		let input = "";
 		for(let i = 0; i < input_arr.length - 1; i++) {
-			input += input_arr[i];
+			input += ' ' + input_arr[i];
 		}
 		if(input.length === 0) input = "hi";
 
         return axios({
             method: 'post',
             url: 'https://api-inference.huggingface.co/models/mrm8488/CodeGPT-small-finetuned-python-token-completion',
-            headers: { "Authorization": "Bearer api_org_XzuCFZ" }, 
+            headers: { "Authorization": "Bearer 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" }, 
             data: {"inputs": input}, 
           }).then((response) => {
+			// console.log(input);
             let generated_text = response.data[0]['generated_text'];
-			console.log(generated_text, '-', input);
+			// console.log(generated_text);
             let predictions = generated_text.split('.');
+			// console.log(predictions);
             let processed_predictions = Array();
             let aStr = 'a';
+			let apiPreds = new Set();
             for(let i = 0; i < predictions.length; i++) {
                 let startIndex = predictions[i].indexOf(input);
                 if(startIndex != -1) {
@@ -236,9 +239,16 @@ connection.onCompletion(
                     if(rest_of_string_arr.length > 0) {
                         aStr += 'a';
                         processed_predictions.push({label: rest_of_string_arr[0], sortText: aStr});
+						apiPreds.add(rest_of_string_arr[0]);
                     }
                 }
             } 
+			console.log(processed_predictions);
+			// console.log(processed_predictions, predictions, input);
+			for(let i = 0; i < frequencyWords.length; i++) {
+				aStr = aStr + 'a';
+				if(!apiPreds.has(frequencyWords[i])) processed_predictions.push({label: frequencyWords[i], sortText : aStr });
+			}
             return processed_predictions;
 		})
 		.catch((error) => {
