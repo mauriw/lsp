@@ -221,13 +221,21 @@ connection.onCompletion(
             method: 'post',
             url: 'https://api-inference.huggingface.co/models/mrm8488/CodeGPT-small-finetuned-python-token-completion',
             headers: { "Authorization": "Bearer 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" }, 
-            data: {"inputs": input}, 
+            data: {"inputs": input, "parameters": {"num_return_sequences": 4, "num_beams":4, "max_length":input.split(' ').length+1, "use_gpu":true}} 
           }).then((response) => {
 			// console.log(input);
+			//console.log('data '+response.data);
+			console.log(response.headers);
             let generated_text = response.data[0]['generated_text'];
-			// console.log(generated_text);
-            let predictions = generated_text.split('.');
-			// console.log(predictions);
+			let generated_text2 = response.data[1]['generated_text'];
+			let gt3 = response.data[2]['generated_text']
+			console.log('gen text 1 '+generated_text);
+			console.log('gen text 2 '+generated_text2);
+			console.log('gt 3', gt3)
+			console.log(response.data[3]['generated_text'])
+			let predictions = [response.data[0]['generated_text'], response.data[1]['generated_text'], response.data[2]['generated_text'], response.data[3]['generated_text']]
+            //let predictions = generated_text.split('.');
+			//console.log(predictions);
             let processed_predictions = Array();
             let aStr = 'a';
 			let apiPreds = new Set();
@@ -249,6 +257,9 @@ connection.onCompletion(
 				aStr = aStr + 'a';
 				if(!apiPreds.has(frequencyWords[i])) processed_predictions.push({label: frequencyWords[i], sortText : aStr });
 			}
+			//console.log('next predictions:')
+			//console.log(processed_predictions)
+			//NOTE: why is import numpy as n giving the incorrect answer?
             return processed_predictions;
 		})
 		.catch((error) => {
