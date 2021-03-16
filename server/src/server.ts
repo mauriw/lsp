@@ -59,7 +59,8 @@ connection.onInitialize((params: InitializeParams) => {
 			textDocumentSync: TextDocumentSyncKind.Incremental,
 			// Tell the client that this server supports code completion.
 			completionProvider: {
-				resolveProvider: true
+				resolveProvider: true,
+				triggerCharacters: ['.', '(']
 			}
 		}
 	};
@@ -218,29 +219,51 @@ connection.onCompletion(
 			else api_input += ' ' + prev_line_words[i];
 		}
 
-		for(let i = 0; i < curr_line_words.length - 1; i++) {
-			api_input += ' ' + curr_line_words[i];
+		for(let i = 0; i < curr_line_words.length; i++) {  
+			if(i === (curr_line_words.length - 1)) {
+				let curr_word = curr_line_words[curr_line_words.length - 1];
+				if((curr_word.indexOf(".") != -1) || (curr_word.indexOf("(") != -1)) {
+					if(api_input.length === 0) {
+						api_input += curr_line_words[i];
+					}
+					else {
+						api_input += ' ' + curr_line_words[i];
+					}				
+				}
+			}
+			else {
+				if(api_input.length === 0) {
+					api_input += curr_line_words[i];
+				}
+				else {
+					api_input += ' ' + curr_line_words[i];
+				}
+			}
 		}
-
-		if(api_input.length === 0) api_input = "hi"; //api does not take in empty inputs
+		if(api_input.length === 0) api_input = "hi"; // api does not take in empty inputs
+		if(api_input.charAt(api_input.length - 1) === ")") api_input = api_input.substr(0, api_input.length-1);
 
         return axios({
             method: 'post',
             url: 'https://api-inference.huggingface.co/models/mrm8488/CodeGPT-small-finetuned-python-token-completion',
             headers: { "Authorization": "Bearer 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" }, 
-            data: {"inputs": api_input, "parameters": {"num_return_sequences": 4, "num_beams":4, "max_length":api_input.split(' ').length+1, "use_gpu":true}} 
+			// data: {"inputs": api_input}
+			data: {"inputs": api_input, "parameters": {"num_return_sequences": 4, "num_beams":4}}
           }).then((response) => {
-			console.log(response.headers);
+			console.log(api_input, 'input');
+			// console.log(response.headers);
             let generated_text = response.data[0]['generated_text'];
-			let generated_text2 = response.data[1]['generated_text'];
-			let gt3 = response.data[2]['generated_text']
-			console.log('gen text 1 '+generated_text);
-			console.log('gen text 2 '+generated_text2);
-			console.log('gt 3', gt3)
-			console.log(response.data[3]['generated_text'])
+			// let generated_text2 = response.data[1]['generated_text'];
+			// let gt3 = response.data[2]['generated_text']
+			// console.log('input', api_input);
+			// console.log('gen text 1 '+generated_text);
+			// console.log('gen text 2 '+generated_text2);
+			// console.log('gt 3', gt3)
+			// console.log(response.data[3]['generated_text'])
 			let predictions = [response.data[0]['generated_text'], response.data[1]['generated_text'], response.data[2]['generated_text'], response.data[3]['generated_text']]
             //using the generated text -> 
-			//let predictions = generated_text.split('.');
+			// let predictions = [generated_text];
+			console.log(predictions);
 			//console.log(predictions);
             let processed_predictions = Array();
             let aStr = 'a';
@@ -253,7 +276,7 @@ connection.onCompletion(
                     if(rest_of_string_arr.length > 0) {
                         aStr += 'a';
 						if(!apiPreds.has(rest_of_string_arr[0])) {
-							processed_predictions.push({label: rest_of_string_arr[0], sortText: aStr});
+							processed_predictions.push({label: rest_of_string_arr[0].replace(/\W/g, ''), sortText: aStr});
 							apiPreds.add(rest_of_string_arr[0]);
 						}
                     }
@@ -263,7 +286,7 @@ connection.onCompletion(
 			// console.log(processed_predictions, predictions, input);
 			for(let i = 0; i < frequencyWords.length; i++) {
 				aStr = aStr + 'a';
-				if(!apiPreds.has(frequencyWords[i])) processed_predictions.push({label: frequencyWords[i], sortText : aStr });
+				if(!apiPreds.has(frequencyWords[i])) processed_predictions.push({label: frequencyWords[i].replace(/\W/g, ''), sortText : aStr });
 			}
 			//console.log('next predictions:')
 			//console.log(processed_predictions)
