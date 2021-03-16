@@ -197,34 +197,39 @@ connection.onCompletion(
 		// The pass parameter contains the position of the text document in
 		// which code complete got requested. For the example we ignore this
 		// info and always provide the same completion items.
-		// let result = [];
-		// let aStr = 'a';
-		// for(let i = 0; i < frequencyWords.length; i++) {
-		// 	aStr = aStr + 'a';
-		// 	result.push({label: frequencyWords[i], sortText : aStr });
-		// }
+
 		let document = documents.get(_textDocumentPosition.textDocument.uri);
 		let text = "";
-		if(document) {
-			text = document.getText();
-		}
+		if(document) text = document.getText();
+
 		let pos = _textDocumentPosition.position;
-		let lines = text.split('\n');   
-		let input_arr = lines[pos.line].split(' ');
-		let input = "";
-		for(let i = 0; i < input_arr.length - 1; i++) {
-			input += ' ' + input_arr[i];
+		let lines = text.split('\n'); // split the text document into lines 
+
+		let prev_line_words = Array();
+		let curr_line_words = Array();
+
+		if(lines.length > 1) prev_line_words = lines[pos.line - 1].split(' '); 
+		curr_line_words = lines[pos.line].split(' ');
+
+		let api_input = "";
+
+		for(let i = 0; i < prev_line_words.length; i++) {
+			if(i === 0) api_input = prev_line_words[i];
+			else api_input += ' ' + prev_line_words[i];
 		}
-		if(input.length === 0) input = "hi";
+
+		for(let i = 0; i < curr_line_words.length - 1; i++) {
+			api_input += ' ' + curr_line_words[i];
+		}
+
+		if(api_input.length === 0) api_input = "hi"; //api does not take in empty inputs
 
         return axios({
             method: 'post',
             url: 'https://api-inference.huggingface.co/models/mrm8488/CodeGPT-small-finetuned-python-token-completion',
             headers: { "Authorization": "Bearer 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" }, 
-            data: {"inputs": input, "parameters": {"num_return_sequences": 4, "num_beams":4, "max_length":input.split(' ').length+1, "use_gpu":true}} 
+            data: {"inputs": api_input, "parameters": {"num_return_sequences": 4, "num_beams":4, "max_length":api_input.split(' ').length+1, "use_gpu":true}} 
           }).then((response) => {
-			// console.log(input);
-			//console.log('data '+response.data);
 			console.log(response.headers);
             let generated_text = response.data[0]['generated_text'];
 			let generated_text2 = response.data[1]['generated_text'];
@@ -234,15 +239,16 @@ connection.onCompletion(
 			console.log('gt 3', gt3)
 			console.log(response.data[3]['generated_text'])
 			let predictions = [response.data[0]['generated_text'], response.data[1]['generated_text'], response.data[2]['generated_text'], response.data[3]['generated_text']]
-            //let predictions = generated_text.split('.');
+            //using the generated text -> 
+			//let predictions = generated_text.split('.');
 			//console.log(predictions);
             let processed_predictions = Array();
             let aStr = 'a';
 			let apiPreds = new Set();
             for(let i = 0; i < predictions.length; i++) {
-                let startIndex = predictions[i].indexOf(input);
+                let startIndex = predictions[i].indexOf(api_input);
                 if(startIndex != -1) {
-                    let rest_of_string = predictions[i].substring(startIndex + input?.length).trim();
+                    let rest_of_string = predictions[i].substring(startIndex + api_input?.length).trim();
                     let rest_of_string_arr = rest_of_string.split(' ');
                     if(rest_of_string_arr.length > 0) {
                         aStr += 'a';
@@ -271,6 +277,78 @@ connection.onCompletion(
 		// if(_textDocumentPosition.position.line === 0) result.push({label: 'hi'});
 	}
 );
+// connection.onCompletion(
+// 	(_textDocumentPosition: TextDocumentPositionParams): any => {
+// 		// The pass parameter contains the position of the text document in
+// 		// which code complete got requested. For the example we ignore this
+// 		// info and always provide the same completion items.
+
+// 		let document = documents.get(_textDocumentPosition.textDocument.uri);
+// 		let text = "";
+// 		if(document) {
+// 			text = document.getText();
+// 		}
+// 		let pos = _textDocumentPosition.position;
+// 		let lines = text.split('\n');   
+// 		let input_arr = lines[pos.line].split(' ');
+// 		let input = "";
+// 		for(let i = 0; i < input_arr.length - 1; i++) {
+// 			input += ' ' + input_arr[i];
+// 		}
+// 		if(input.length === 0) input = "hi";
+
+//         return axios({
+//             method: 'post',
+//             url: 'https://api-inference.huggingface.co/models/mrm8488/CodeGPT-small-finetuned-python-token-completion',
+//             headers: { "Authorization": "Bearer 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" }, 
+//             data: {"inputs": input, "parameters": {"num_return_sequences": 4, "num_beams":4, "max_length":input.split(' ').length+1, "use_gpu":true}} 
+//           }).then((response) => {
+// 			console.log(response.headers);
+//             let generated_text = response.data[0]['generated_text'];
+// 			let generated_text2 = response.data[1]['generated_text'];
+// 			let gt3 = response.data[2]['generated_text']
+// 			console.log('gen text 1 '+generated_text);
+// 			console.log('gen text 2 '+generated_text2);
+// 			console.log('gt 3', gt3)
+// 			console.log(response.data[3]['generated_text'])
+// 			let predictions = [response.data[0]['generated_text'], response.data[1]['generated_text'], response.data[2]['generated_text'], response.data[3]['generated_text']]
+//             //let predictions = generated_text.split('.');
+// 			//console.log(predictions);
+//             let processed_predictions = Array();
+//             let aStr = 'a';
+// 			let apiPreds = new Set();
+//             for(let i = 0; i < predictions.length; i++) {
+//                 let startIndex = predictions[i].indexOf(input);
+//                 if(startIndex != -1) {
+//                     let rest_of_string = predictions[i].substring(startIndex + input?.length).trim();
+//                     let rest_of_string_arr = rest_of_string.split(' ');
+//                     if(rest_of_string_arr.length > 0) {
+//                         aStr += 'a';
+// 						if(!apiPreds.has(rest_of_string_arr[0])) {
+// 							processed_predictions.push({label: rest_of_string_arr[0], sortText: aStr});
+// 							apiPreds.add(rest_of_string_arr[0]);
+// 						}
+//                     }
+//                 }
+//             } 
+// 			console.log(processed_predictions);
+// 			// console.log(processed_predictions, predictions, input);
+// 			for(let i = 0; i < frequencyWords.length; i++) {
+// 				aStr = aStr + 'a';
+// 				if(!apiPreds.has(frequencyWords[i])) processed_predictions.push({label: frequencyWords[i], sortText : aStr });
+// 			}
+// 			//console.log('next predictions:')
+// 			//console.log(processed_predictions)
+// 			//NOTE: why is import numpy as n giving the incorrect answer?
+//             return processed_predictions;
+// 		})
+// 		.catch((error) => {
+// 			console.log(error);
+// 		});
+
+// 		// if(_textDocumentPosition.position.line === 0) result.push({label: 'hi'});
+// 	}
+// );
 
 // This handler resolves additional information for the item selected in
 // the completion list.
