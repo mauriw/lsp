@@ -209,7 +209,7 @@ connection.onCompletion(
 			text = document.getText();
 		}
 		let pos = _textDocumentPosition.position;
-		let lines = text.split(',');   
+		let lines = text.split('\n');   
 		let input_arr = lines[pos.line].split(' ');
 		let input = "";
 		for(let i = 0; i < input_arr.length - 1; i++) {
@@ -246,8 +246,10 @@ connection.onCompletion(
                     let rest_of_string_arr = rest_of_string.split(' ');
                     if(rest_of_string_arr.length > 0) {
                         aStr += 'a';
-                        processed_predictions.push({label: rest_of_string_arr[0], sortText: aStr});
-						apiPreds.add(rest_of_string_arr[0]);
+						if(!apiPreds.has(rest_of_string_arr[0])) {
+							processed_predictions.push({label: rest_of_string_arr[0], sortText: aStr});
+							apiPreds.add(rest_of_string_arr[0]);
+						}
                     }
                 }
             } 
