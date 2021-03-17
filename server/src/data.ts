@@ -464,7 +464,8 @@ const frequencyWords = [
 	'information',
 	'ext',
 	'widget',
-	'mox'
+	'mox', 
+	'pandas',
 ]
 
 export { frequencyWords }
