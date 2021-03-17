@@ -247,8 +247,8 @@ connection.onCompletion(
             method: 'post',
             url: 'https://api-inference.huggingface.co/models/mrm8488/CodeGPT-small-finetuned-python-token-completion',
             headers: { "Authorization": "Bearer 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" }, 
-			// data: {"inputs": api_input}
-			data: {"inputs": api_input, "parameters": {"num_return_sequences": 4, "num_beams":4}}
+			// data: {"inputs": api_input} 
+			data: {"inputs": api_input, "parameters": {"num_return_sequences": 4, "num_beams":4, "num_beam_groups":4, "diversity_penalty":0.5}, "options":{use_gpu:true}}
           }).then((response) => {
 			console.log(api_input, 'input');
 			// console.log(response.headers);
